@@ -142,12 +142,12 @@ code{background:#EEEDE6;padding:1px 5px;border-radius:4px;font-size:.92em}
 .sheet{position:relative;width:100%;aspect-ratio:148/210;background:#fff;border:1px solid var(--line-strong);
   box-shadow:0 6px 22px rgba(20,25,45,.14);font-family:Arial,Helvetica,sans-serif;overflow:hidden}
 .sheet .letterhead{position:absolute;left:0;right:0;top:0;height:21.43%;
-  background:repeating-linear-gradient(-45deg,#F6F5F0 0 6px,#EFEEE7 6px 12px);
-  display:flex;align-items:center;justify-content:center;color:#A5A294;font-size:10px;
+  background:repeating-linear-gradient(-45deg,#F7F7F7 0 6px,#EFEFEF 6px 12px);
+  display:flex;align-items:center;justify-content:center;color:#9E9E9E;font-size:10px;
   font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-family:var(--font)}
 .sheet .footzone{position:absolute;left:0;right:0;bottom:0;
-  background:repeating-linear-gradient(-45deg,#F6F5F0 0 6px,#EFEEE7 6px 12px);
-  display:flex;align-items:center;justify-content:center;color:#A5A294;font-size:9px;
+  background:repeating-linear-gradient(-45deg,#F7F7F7 0 6px,#EFEFEF 6px 12px);
+  display:flex;align-items:center;justify-content:center;color:#9E9E9E;font-size:9px;
   font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:var(--font);text-align:center;padding:0 8px}
 .sheet-inner{position:absolute;inset:0;container-type:inline-size}
 .sheet-inner .pv-scale{position:absolute;inset:0}
@@ -221,32 +221,45 @@ code{background:#EEEDE6;padding:1px 5px;border-radius:4px;font-size:.92em}
 @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}
   30%,50%,70%{transform:translateX(-5px)}40%,60%{transform:translateX(5px)}}
 
-/* ============ PRINT PAGES (fiel ao template legado) ============ */
+/* ============ PRINT PAGES (Template Ambulatorial A5 Ajuste Fino — CSS fiel ao arquivo de templates) ============ */
+:root{
+  --page-w:148mm; --page-h:210mm;
+  --pg-margin-top:45mm; --pg-margin-right:13mm; --pg-margin-bottom:25mm; --pg-margin-left:13mm;
+  --content-w:calc(var(--page-w) - var(--pg-margin-left) - var(--pg-margin-right));
+  --content-h:calc(var(--page-h) - var(--pg-margin-top) - var(--pg-margin-bottom));
+}
 #print-root{display:none}
 @media print{
   body{background:#fff}
   body>*:not(#print-root){display:none !important}
   #print-root{display:block}
+  .print-page{margin:0;box-shadow:none}
 }
 @page{size:A5 portrait;margin:0}
-.print-page{position:relative;width:148mm;height:210mm;page-break-after:always;overflow:hidden;
-  background:#fff;font-family:Arial,Helvetica,sans-serif;color:#000}
+.print-page{position:relative;width:var(--page-w);height:var(--page-h);page-break-after:always;overflow:hidden;
+  background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:1rem;line-height:normal;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
 .print-page:last-child{page-break-after:auto}
-.content-area{position:absolute;top:45mm;left:13mm;width:calc(148mm - 26mm);height:calc(210mm - 45mm - 25mm)}
-.margin-50 .content-area{height:calc(210mm - 45mm - 50mm)}
+.content-area{position:absolute;top:var(--pg-margin-top);left:var(--pg-margin-left);width:var(--content-w);height:var(--content-h)}
+.margin-50 .content-area{height:calc(var(--page-h) - var(--pg-margin-top) - 50mm)}
+.doc-title{text-align:center;font-size:13pt;font-weight:700;margin:0 0 6mm 0;line-height:1.2}
 .print-patient{font-size:11pt;font-weight:700;text-transform:uppercase;line-height:1.2;margin:0;
   padding-right:42mm;word-break:break-word}
-.p-divider{height:.6mm;background:#000;margin:3mm 0 6mm 0}
-.body-free{position:relative;width:100%;font-size:10pt;line-height:1.35;word-break:break-word}
-.rx-item-p{margin:0 0 8mm 0}
-.rx-item-p:last-child{margin-bottom:0}
-.rx-line-p{margin:0;font-size:11pt;line-height:1.25}
-.rx-number-p{font-weight:400;margin-right:1.2mm}
-.rx-sig-p{margin:1.2mm 0 0 6.5mm;font-size:10.8pt;line-height:1.28}
-.exam-list-p>div{margin-bottom:1.5mm;font-size:10pt;line-height:1.35}
-.cert-body-p{font-size:10pt;line-height:1.5;white-space:pre-wrap}
-.cid-line-p{margin-top:6mm;font-size:10pt;font-weight:700;line-height:1.25}
-.date-bottom-p{position:absolute;left:0;bottom:0;font-size:9pt;line-height:1.2}
+.divider{height:0.6mm;background:#000;margin:3mm 0 6mm 0}
+.body-free{position:relative;width:100%;font-size:10pt;line-height:1.35;white-space:normal;word-break:break-word}
+.date-bottom{position:absolute;left:0;bottom:0;font-size:9pt;line-height:1.2}
+.exam-list,.cert-body,.items-block{font-size:10pt;line-height:1.35;word-break:break-word}
+.items-block{white-space:normal}
+.prescription-list{width:100%}
+.rx-item{margin:0 0 8mm 0}
+.rx-item:last-child{margin-bottom:0}
+.rx-head{font-size:11.5pt;line-height:1.28;margin:0 0 1.8mm 0}
+.rx-number{font-weight:400;margin-right:1.2mm}
+.rx-name{font-weight:400}
+.rx-line{margin-left:0mm;font-size:11pt;line-height:1.25}
+.rx-sig{margin:1.2mm 0 0 6.5mm;font-size:10.8pt;line-height:1.28}
+.exam-list > div{margin-bottom:1.5mm}
+.cid-line{margin-top:6mm;font-size:10pt;font-weight:700;line-height:1.25}
 .doc-footer-p{position:absolute;right:0;bottom:0;font-size:8.5pt;line-height:1.25;text-align:right}
 
 /* ============ VISUAL REFRESH (camada de skin — não altera a impressão) ============ */
@@ -1429,28 +1442,35 @@ window.addEventListener('online', ()=>{ updateBadgeIdle(); if(cloud.on) syncNow(
 window.addEventListener('offline', updateBadgeIdle);
 
 /* ================= PÁGINAS (preview + impressão) ================= */
+/* Estrutura idêntica ao "Template Ambulatorial A5 Ajuste Fino":
+   rx-item > rx-line (rx-number + rx-name + qtd) + rx-sig */
 function rxItemsHTML(chunk, startIndex){
-  return chunk.map((it,k)=>`
-    <div class="rx-item-p">
-      <div class="rx-line-p"><span class="rx-number-p">${startIndex+k+1}.</span> ${esc(it.nome)}${it.qt?' '+esc('— '+it.qt):''}</div>
-      ${it.pos?`<div class="rx-sig-p">${esc(it.pos)}</div>`:''}
-    </div>`).join('');
+  return chunk.map((it,k)=>[
+    '<div class="rx-item">',
+      '<div class="rx-line">',
+        `<span class="rx-number">${startIndex+k+1}.</span> `,
+        `<span class="rx-name">${esc(it.nome)}</span>`+(it.qt?' '+esc(it.qt):''),
+      '</div>',
+      it.pos?`<div class="rx-sig">${esc(it.pos)}</div>`:'',
+    '</div>'
+  ].join('')).join('');
 }
 function footerHTML(){
   if(!state.profile.printFooter) return '';
   const bits = [state.profile.nome, state.profile.crm].filter(Boolean).map(esc);
   return bits.length ? `<div class="doc-footer-p">${bits.join(' · ')}</div>` : '';
 }
-function pageHTML(inner, margin50, patient, dateIso){
-  return `<section class="print-page${margin50?' margin-50':''}">
-    <div class="content-area">
-      <div class="print-patient">PACIENTE: ${esc(patient||'________________________________')}</div>
-      <div class="p-divider"></div>
-      <div class="body-free">${inner}</div>
-      <div class="date-bottom-p">${esc(dataPtBR(dateIso))}</div>
-      ${footerHTML()}
-    </div>
-  </section>`;
+function pageHTML(opts){
+  return `<section class="print-page${opts.margin50?' margin-50':''}">
+  <div class="content-area">
+    <div class="print-patient">PACIENTE: ${esc(opts.patient||'________________________________')}</div>
+    <div class="divider"></div>
+    <div class="body-free ${opts.bodyClass}">${opts.inner}</div>
+    ${opts.after||''}
+    <div class="date-bottom">${esc(dataPtBR(opts.dateIso))}</div>
+    ${footerHTML()}
+  </div>
+</section>`;
 }
 function buildPages(){
   const patient = $('f-nome').value.trim();
@@ -1462,23 +1482,25 @@ function buildPages(){
     if(!chunks.length) chunks.push([]);
     chunks.forEach((chunk,ci)=>{
       const inner = rxItemsHTML(chunk, ci*5);
+      const base = { bodyClass:'items-block prescription-list', inner, patient, dateIso };
       if(state.doc==='simples'){
-        pages.push({ html: pageHTML(inner,false,patient,dateIso),
+        pages.push({ html: pageHTML(base),
           caption:`Receita simples${chunks.length>1?` · página ${ci+1}/${chunks.length}`:''}` });
       } else {
-        pages.push({ html: pageHTML(inner,true,patient,dateIso), caption:`Controle especial · 1ª via${chunks.length>1?` · pág. ${ci+1}`:''}` });
-        pages.push({ html: pageHTML(inner,true,patient,dateIso), caption:`Controle especial · 2ª via${chunks.length>1?` · pág. ${ci+1}`:''}` });
+        pages.push({ html: pageHTML(Object.assign({margin50:true},base)), caption:`Controle especial · 1ª via${chunks.length>1?` · pág. ${ci+1}`:''}` });
+        pages.push({ html: pageHTML(Object.assign({margin50:true},base)), caption:`Controle especial · 2ª via${chunks.length>1?` · pág. ${ci+1}`:''}` });
       }
     });
   } else if(state.doc==='exames'){
     const linhas = $('f-exames').value.split('\n').map(s=>s.trim()).filter(Boolean);
-    const inner = `<div class="exam-list-p">${linhas.map((l,i)=>`<div>${i+1}. ${esc(l.toUpperCase())}</div>`).join('') || ''}</div>`;
-    pages.push({ html: pageHTML(inner,false,patient,dateIso), caption:'Pedido de exames' });
+    const inner = linhas.map((l,i)=>`<div>${i+1}. ${esc(l.toUpperCase())}</div>`).join('');
+    pages.push({ html: pageHTML({bodyClass:'exam-list', inner, patient, dateIso}), caption:'Pedido de exames' });
   } else {
     const txt = $('f-atestado').value.trim();
     const cid = $('f-cid').value.trim();
-    const inner = `<div class="cert-body-p">${esc(txt)}</div>${cid?`<div class="cid-line-p">CID: ${esc(cid.toUpperCase())}</div>`:''}`;
-    pages.push({ html: pageHTML(inner,false,patient,dateIso), caption:'Atestado' });
+    const inner = esc(txt).replace(/\n/g,'<br>');
+    const after = cid?`<div class="cid-line">CID: ${esc(cid.toUpperCase())}</div>`:'';
+    pages.push({ html: pageHTML({bodyClass:'cert-body', inner, after, patient, dateIso}), caption:'Atestado' });
   }
   return pages;
 }

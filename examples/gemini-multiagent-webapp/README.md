@@ -42,7 +42,17 @@ detectados a partir do `netlify.toml` (publish = `public`, functions = `netlify/
 
 ### Configure a chave de API (obrigatório)
 
-No painel do site: **Site configuration → Environment variables → Add a variable**
+Um `.env` local já vem preenchido com sua chave (só para `netlify dev` / testes locais —
+o deploy em produção **não lê esse arquivo**, o Netlify usa apenas variáveis de ambiente
+do próprio site). Para configurar o site publicado, escolha uma opção:
+
+**Via CLI** (não grava a chave em nenhum arquivo, vai direto para o cofre do Netlify):
+
+```bash
+netlify env:set GOOGLE_API_KEY "<sua chave>" --context production
+```
+
+**Via painel:** **Site configuration → Environment variables → Add a variable**
 
 ```
 Key:   GOOGLE_API_KEY

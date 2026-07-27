@@ -1,0 +1,9 @@
+{
+  "name": "gemini-multiagent-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agente idea -> refiner -> estrategista sobre a API Gemini, pronto para deploy no Netlify (Netlify Functions + página estática).",
+  "engines": {
+    "node": ">=18"
+  }
+}

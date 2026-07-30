@@ -1,13 +1,16 @@
 [project]
 name = "clinical_copilot"
 version = "0.1.0"
-description = "Copilot clínico (CrewAI + Groq) que consulta o Medplum via MCP"
+description = "Copilot clínico e assistente pessoal (CrewAI + Groq) com Medplum via MCP"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.10,<3.14"
 dependencies = [
     "crewai[tools]>=1.15.9,<2.0.0",
     "mcp>=1.0.0",
     "requests>=2.31.0",
+    # Necessário para usar llm="groq/..." (Groq não é um provider nativo do
+    # crewai.LLM, só via LiteLLM).
+    "litellm>=1.60.0",
 ]
 
 [project.scripts]

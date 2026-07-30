@@ -1,4 +1,4 @@
-research_task:
+fhir_research_task:
   description: >
     Pergunta do profissional: "{pergunta}"
     Patient/{patient_id} (pode estar vazio, veja abaixo).
@@ -6,31 +6,50 @@ research_task:
     Use a tool `fhir-request` (sempre com method="GET") para buscar no
     Medplum os recursos FHIR que respondem à pergunta. Se {patient_id} não
     estiver vazio, filtre as buscas por esse paciente
-    (ex.: `/fhir/R4/Observation?subject=Patient/{patient_id}`).
+    (ex.: `/fhir/R4/Observation?subject=Patient/{patient_id}`). Se
+    {patient_id} estiver vazio, diga isso e não tente pesquisar um paciente
+    específico.
 
     Nunca use POST, PUT, PATCH ou DELETE — se a tool aceitar, ainda assim
     não é o seu papel usá-los.
   expected_output: >
     Lista dos recursos FHIR relevantes encontrados, cada um com
     resourceType, id, data (quando aplicável) e os valores que respondem à
-    pergunta. Se nada relevante for encontrado, diga isso explicitamente.
+    pergunta. Se nada relevante for encontrado (ou nenhum patient_id foi
+    informado), diga isso explicitamente.
   agent: fhir_research_agent
+
+protocol_research_task:
+  description: >
+    Pergunta do profissional: "{pergunta}"
+
+    Use a tool `buscar_base_conhecimento_clinico` para buscar protocolos,
+    farmacologia, templates de documentação e/ou itens de medicamentos
+    relevantes para responder à pergunta. Ajuste `tipo` ("documento",
+    "medicamento" ou "ambos") conforme a natureza da pergunta.
+  expected_output: >
+    Lista dos itens relevantes encontrados na base de conhecimento, cada um
+    com sua fonte (arquivo_fonte, ou contexto/fonte para medicamentos). Se
+    nada relevante for encontrado, diga isso explicitamente.
+  agent: protocol_research_agent
 
 summary_task:
   description: >
-    Com base nos achados da pesquisa, escreva uma resposta objetiva para a
-    pergunta "{pergunta}".
+    Combine os achados de FHIR (dados do paciente, se houver) com os
+    achados da base de conhecimento (protocolo/farmacologia/prescrição) em
+    uma resposta objetiva para a pergunta "{pergunta}".
 
     Requisitos:
-    - Cite a fonte (resourceType/id e data) de cada informação usada.
+    - Cite a fonte de cada informação usada (resourceType/id e data para
+      dados de FHIR; arquivo_fonte ou contexto/fonte para itens da base de
+      conhecimento).
+    - Diferencie claramente dado do paciente (FHIR) de protocolo
+      institucional/base pessoal (base de conhecimento).
     - Se a informação disponível for insuficiente ou ambígua, diga isso
       claramente em vez de especular.
-    - Nunca apresente uma conclusão diagnóstica como fato — a decisão é do
-      profissional que revisar este resumo.
-    - Termine sempre com o aviso: "Rascunho gerado por IA — requer revisão
-      de um profissional de saúde antes de qualquer uso clínico."
   expected_output: >
-    Resumo em markdown respondendo à pergunta, com as fontes citadas e o
-    aviso de revisão obrigatória ao final.
+    Resumo em markdown respondendo à pergunta, com as fontes citadas, a
+    distinção entre dado do paciente e protocolo, e o aviso de revisão
+    obrigatória ao final.
   agent: clinical_summary_agent
   output_file: output/resumo.md

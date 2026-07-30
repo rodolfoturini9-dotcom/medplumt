@@ -1,0 +1,29 @@
+# Ceftriaxona Hospital Dia
+
+*Fonte original: `Ceftriaxona_Hospital_Dia.txt`*
+
+---
+
+REGIME DE HOSPITAL-DIA
+
+USO INTRAVENOSO
+
+1) CEFTRIAXONE SODICA EV 1 G F/A  ------------- 28 AMPOLAS
+DILUIR 02 AMPOLAS EM 100 ML DE SF 0,9%, INFUNDIR EM 01 HORA, 01 VEZ AO DIA, DURANTE 14 DIAS.
+
+
+
+D1  OK
+D2
+D3
+D4
+D5
+D6
+D7
+D8
+D9
+D10
+D11
+D12
+D13
+D14

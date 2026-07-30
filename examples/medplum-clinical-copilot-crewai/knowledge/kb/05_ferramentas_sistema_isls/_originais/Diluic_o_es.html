@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gerador de Prescrições EV/BIC - v2.0 Auditoria</title>
+<style>
+:root{
+  --primary:#2563eb;
+  --primary-600:#1d4ed8;
+  --primary-50:#eff6ff;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e2e8f0;
+  --success:#059669;
+  --warning:#f59e0b;
+  --radius:16px;
+  --shadow:0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  background: radial-gradient(1200px 600px at 80% -10%, #dbeafe 0%, transparent 60%), 
+              radial-gradient(800px 400px at -10% 20%, #e0e7ff 0%, transparent 50%),
+              var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+header{
+  background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+  color:white;
+  border-radius:var(--radius);
+  padding:28px 24px;
+  box-shadow: var(--shadow-lg);
+  position:relative;
+  overflow:hidden;
+  margin-bottom:24px;
+}
+header::after{
+  content:"";
+  position:absolute;
+  right:-80px;top:-80px;
+  width:220px;height:220px;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+  border-radius:50%;
+}
+h1{margin:0;font-size:clamp(22px,3vw,30px);font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.subtitle{opacity:0.9;margin-top:6px;font-size:14px;font-weight:500}
+.badge-version{
+  padding:4px 10px;background:rgba(255,255,255,0.18);border-radius:999px;
+  font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,0.3);backdrop-filter:blur(4px);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: 380px 1fr;
+  gap:24px;
+  align-items:start;
+}
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr}
+  .wrap{padding:16px}
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+}
+.card-title{
+  font-size:15px;
+  font-weight:700;
+  margin:0 0 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#0b1220;
+}
+.controls{
+  display:grid;
+  gap:14px;
+}
+.field label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  margin-bottom:6px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.input, select{
+  width:100%;
+  padding:12px 14px;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  font-size:15px;
+  background:white;
+  outline:none;
+  transition:all .2s;
+}
+.input:focus, select:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+.input[type="number"]{font-variant-numeric:tabular-nums}
+
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.5}
+.search-wrap .input{padding-left:38px}
+
+.list{
+  margin-top:12px;
+  max-height:440px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding-right:4px;
+}
+.list::-webkit-scrollbar{width:8px}
+.list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
+.item{
+  text-align:left;
+  padding:12px 14px;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  background:white;
+  cursor:pointer;
+  transition:all .15s;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.item:hover{border-color:#93c5fd;background:#f8fafc;transform:translateY(-1px)}
+.item.active{
+  border-color:var(--primary);
+  background:var(--primary-50);
+  box-shadow:0 0 0 2px rgba(37,99,235,0.15) inset;
+}
+.item-name{font-weight:600;font-size:14px;color:#0f172a}
+.item-meta{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.badge{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#f1f5f9;
+  color:#334155;
+  font-weight:600;
+  border:1px solid #e2e8f0;
+}
+.badge.calc{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.badge.vaso{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+.badge.atb{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.badge.renal{background:#fef3c7;border-color:#fde68a;color:#92400e}
+.badge.foto{background:#f3e8ff;border-color:#e9d5ff;color:#6b21a8}
+
+.result-header{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}
+.med-title{font-size:20px;font-weight:800;margin:0 0 4px;letter-spacing:-0.01em}
+.med-cat{font-size:12px;color:var(--muted)}
+
+.presc-base{
+  margin:14px 0 0;
+  padding:16px;
+  background:#f8fafc;
+  border:1px dashed #cbd5e1;
+  border-radius:12px;
+  font-size:15px;
+  line-height:1.6;
+}
+
+.calc-grid{
+  margin-top:16px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+@media (max-width:520px){.calc-grid{grid-template-columns:1fr}}
+.kpi{
+  padding:14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg,white, #f9fbff);
+}
+.kpi h4{margin:0 0 4px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kpi .val{font-size:24px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+.info-row{
+  margin-top:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.chip{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#eef2ff;
+  color:#3730a3;
+  border:1px solid #c7d2fe;
+  font-weight:600;
+}
+
+textarea.final{
+  width:100%;
+  min-height:110px;
+  resize:vertical;
+  padding:14px;
+  border-radius:12px;
+  border:1.5px solid var(--border);
+  font-size:15px;
+  line-height:1.55;
+  background:#fbfdff;
+}
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.btn{
+  padding:12px 16px;
+  border-radius:12px;
+  border:1.5px solid var(--primary);
+  background:var(--primary);
+  color:white;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  transition:all .15s;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  box-shadow: var(--shadow);
+}
+.btn:hover{background:var(--primary-600);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.secondary{
+  background:white;
+  color:var(--primary);
+}
+.btn.secondary:hover{background:var(--primary-50)}
+.btn.copied{background:var(--success);border-color:var(--success)}
+
+.empty{
+  padding:40px 20px;
+  text-align:center;
+  color:var(--muted);
+  border:2px dashed #e2e8f0;
+  border-radius:12px;
+  background:#fcfcff;
+}
+.empty svg{opacity:0.5;margin-bottom:10px}
+
+.footer-note{margin-top:16px;font-size:12px;color:var(--muted);text-align:center}
+.counter{font-size:12px;color:var(--muted);margin-left:auto}
+
+.crcl-result{
+  margin-top:14px;
+  padding:12px 14px;
+  background:#ecfdf5;
+  border:1px solid #a7f3d0;
+  border-radius:12px;
+  color:#065f46;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+}
+.renal-alert{
+  margin-top:14px;
+  padding:14px;
+  background:#fffbeb;
+  border:1px solid #fde68a;
+  border-radius:12px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+}
+.renal-title{
+  font-weight:800;
+  color:#92400e;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+  font-size:14px;
+}
+.renal-text{
+  font-size:14px;
+  color:#78350f;
+  line-height:1.5;
+}
+.renal-note{
+  font-size:11px;
+  color:#a16207;
+  margin-top:8px;
+  font-style:italic;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Gerador de Prescrições EV/BIC <span class="badge-version">Auditoria v2.0</span></h1>
+    <div class="subtitle">Base Completa • 93 medicamentos • Cálculo por peso + Clearance renal (Cockcroft-Gault)</div>
+  </header>
+
+  <div class="grid">
+    <!-- COLUNA ESQUERDA -->
+    <div>
+      <section class="card">
+        <h2 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Dados do Paciente
+        </h2>
+        <div class="controls" style="grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label for="peso">Peso (kg)</label>
+            <input id="peso" class="input" type="number" inputmode="decimal" min="0.5" max="300" step="0.1" value="70">
+          </div>
+          <div class="field">
+            <label for="idade">Idade (anos)</label>
+            <input id="idade" class="input" type="number" inputmode="numeric" min="18" max="120" step="1" value="65">
+          </div>
+          <div class="field">
+            <label for="sexo">Sexo</label>
+            <select id="sexo">
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="creatinina">Creatinina (mg/dL)</label>
+            <input id="creatinina" class="input" type="number" inputmode="decimal" min="0.1" max="20" step="0.01" value="1.0">
+          </div>
+        </div>
+        <div id="crclBox" class="crcl-result" style="display:none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span>Clearance: <strong id="crclValue">--</strong> mL/min <span id="crclClass" style="opacity:0.85"></span></span>
+        </div>
+        <div style="margin-top:12px">
+          <label style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;cursor:pointer;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff7ed">
+            <input type="checkbox" id="critico" style="width:18px;height:18px;accent-color:var(--primary)">
+            Paciente crítico (liberar norepinefrina até 3,0 mcg/kg/min)
+          </label>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:20px">
+        <h2 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35"/></svg>
+          Seleção
+        </h2>
+        <div class="controls">
+          <div class="field">
+            <label for="categoria">Categoria</label>
+            <select id="categoria"></select>
+          </div>
+          <div class="field">
+            <label for="busca">Buscar medicamento</label>
+            <div class="search-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input id="busca" class="input" type="search" placeholder="Ex: norepinefrina, vancomicina...">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;margin-top:16px">
+          <h3 style="margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Medicamentos</h3>
+          <span id="contador" class="counter">93 itens</span>
+        </div>
+        <div id="lista" class="list"></div>
+      </section>
+    </div>
+
+    <!-- COLUNA DIREITA -->
+    <section>
+      <div class="card" style="margin-bottom:20px">
+        <div class="result-header">
+          <div>
+            <h2 id="medNome" class="med-title">Selecione um medicamento</h2>
+            <div id="medCat" class="med-cat">Escolha na lista ao lado</div>
+          </div>
+          <span id="badgeCalc" class="badge calc" style="display:none">Cálculo por peso</span>
+        </div>
+
+        <div id="prescBox" class="presc-base" style="display:none"></div>
+        <div id="concInfo" style="display:none;margin-top:8px;font-size:12px;color:var(--muted);font-weight:600"></div>
+        <div id="alertaMed" style="display:none;margin-top:10px;padding:10px;border-radius:10px;background:#faf5ff;border:1px solid #e9d5ff;color:#6b21a8;font-size:13px;font-weight:700;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span id="alertaTexto"></span>
+        </div>
+        
+        <div id="renalBox" class="renal-alert" style="display:none">
+          <div class="renal-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Ajuste por Função Renal (KDIGO)
+          </div>
+          <div id="renalText" class="renal-text"></div>
+          <div class="renal-note">Validar com protocolo institucional e farmácia clínica.</div>
+        </div>
+
+        <div id="emptyState" class="empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5h6M9 12h6M9 19h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
+          <div><strong>Nenhum medicamento selecionado</strong></div>
+          <div style="font-size:13px;margin-top:4px">Use a busca ou filtre por categoria</div>
+        </div>
+
+        <div id="calcBox" style="display:none">
+          <div class="calc-grid">
+            <div class="kpi">
+              <h4>Velocidade Mínima</h4>
+              <div class="val"><span id="rateMin">—</span> <span style="font-size:16px;font-weight:600">mL/h</span></div>
+              <div class="sub" id="doseMinLabel"></div>
+            </div>
+            <div class="kpi">
+              <h4>Velocidade Máxima</h4>
+              <div class="val"><span id="rateMax">—</span> <span style="font-size:16px;font-weight:600">mL/h</span></div>
+              <div class="sub" id="doseMaxLabel"></div>
+            </div>
+          </div>
+          <div class="info-row" id="infoChips"></div>
+          <div id="highFlowWarn" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;font-weight:700">
+            ⚠ Vazão alta (>100 mL/h) – conferir diluição e bomba de infusão
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+          Texto final para prescrição
+        </h2>
+        <textarea id="textoFinal" class="final" readonly placeholder="A prescrição aparecerá aqui..."></textarea>
+        <div class="actions">
+          <button id="btnCopiar" class="btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar prescrição
+          </button>
+          <button id="btnLimpar" class="btn secondary">Limpar seleção</button>
+        </div>
+      </div>
+
+      <div class="footer-note">Uso interno • v2.0 auditoria completa • Verificar diluição e compatibilidade conforme protocolo institucional</div>
+    </section>
+  </div>
+</div>
+
+<script>
+const medicamentos = [
+{"cat":"Outros","nome":"Acetilcisteína 100mg/mL 3mL","prescricao":"Acetilcisteína 100mg/mL 3mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Aciclovir 250 mg","prescricao":"Aciclovir 250 mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Ácido ascórbico 100mg/mL 5mL","prescricao":"Ácido ascórbico 100mg/mL 5mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Ácido tranexâmico 250mg/5mL","prescricao":"Ácido tranexâmico 250mg/5mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Adenosina 3mg/mL 2mL","prescricao":"Adenosina 3mg/mL 2mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Outros","nome":"Albumina humana 200mg/mL 50mL","prescricao":"Albumina humana 200mg/mL 50mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Alteplase 50mg","prescricao":"Alteplase 50mg, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Amicacina 250mg/mL 2mL","prescricao":"Amicacina 250mg/mL 2mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Aminofilina 24mg/mL 2mL","prescricao":"Aminofilina 24mg/mL 2mL + SF 0,9% 250 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Amiodarona 50mg/mL 6 ampolas (18 mL)","prescricao":"Amiodarona 50mg/mL 6 ampolas (18 mL) + SG 5% 232 mL, administrar por via intravenosa em BIC.","calcPeso":false,"alerta":"FOTOSSENSÍVEL - proteger da luz"},
+{"cat":"Antibióticos","nome":"Amoxicilina + ácido clavulânico","prescricao":"Amoxicilina + ácido clavulânico 1000 + 200 mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Ampicilina sódica 1 g","prescricao":"Ampicilina sódica 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Ampicilina + sulbactam 1 g","prescricao":"Ampicilina + sulbactam 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Anfotericina B lipossomal 50mg/10mL","prescricao":"Anfotericina B lipossomal 50mg/10mL + SG 5% 100 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Anfotericina B","prescricao":"Anfotericina B + SG 5% 100 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Atracúrio 10mg/5mL 5 ampolas (25 mL)","prescricao":"Atracúrio 10mg/5mL 5 ampolas (25 mL) + SF 0,9% 225 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":11,"doseMax":13,"concentracao":200,"unidadeConc":"mcg/mL"},
+{"cat":"Outros","nome":"Atropina 0,25mg/mL","prescricao":"Atropina 0,25mg/mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Azitromicina 500mg","prescricao":"Azitromicina 500mg + SF 0,9% 500 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Outros","nome":"Bicarbonato de sódio 8,4% ampola 10mL","prescricao":"Bicarbonato de sódio 8,4% ampola 10mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Bromoprida 10mg/mL ampola","prescricao":"Bromoprida 10mg/mL ampola + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Butilbrometo de escopolamina 4mg","prescricao":"Butilbrometo de escopolamina 4mg + dipirona sódica 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Cefalotina sódica 1 g","prescricao":"Cefalotina sódica 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Cefazolina sódica 1 g","prescricao":"Cefazolina sódica 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Cefepime 1 g","prescricao":"Cefepime 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Ceftazidima 2 g","prescricao":"Ceftazidima 2 g + avibactam 500 mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Ceftriaxona 1 g","prescricao":"Ceftriaxona 1 g + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Cetamina 50mg/10mL","prescricao":"Cetamina 50mg/10mL + SG 5% 90 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":1,"doseMax":2,"concentracao":500,"unidadeConc":"mcg/mL"},
+{"cat":"Outros","nome":"Cetoprofeno 100 mg","prescricao":"Cetoprofeno 100 mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Ciprofloxacino 2mg/mL","prescricao":"Ciprofloxacino 2mg/mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Clindamicina 150mg/mL ampola 4 mL","prescricao":"Clindamicina 150mg/mL ampola 4 mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Cloreto de potássio 19,1%","prescricao":"Cloreto de potássio 19,1% 10 mL + SF 0,9% 90 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Cloreto de sódio 20%","prescricao":"Cloreto de sódio 20% 20 mL + SF 0,9% 80 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Complexo B","prescricao":"Complexo B + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Deslanosídeo 0,2mg/mL","prescricao":"Deslanosídeo 0,2mg/mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Outros","nome":"Dexametasona 4mg/mL","prescricao":"Dexametasona 4mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Diazepam 5mg/mL","prescricao":"Diazepam 5mg/mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Outros","nome":"Diclofenaco sódico 25mg/mL","prescricao":"Diclofenaco sódico 25mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Difenidramina 50mg/mL","prescricao":"Difenidramina 50mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Dimenidrinato 50mg/mL","prescricao":"Dimenidrinato 50mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Dipirona sódica 500mg/mL","prescricao":"Dipirona sódica 500mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Dobutamina 250mg/20mL 2 ampolas (40 mL)","prescricao":"Dobutamina 250mg/20mL 2 ampolas (40 mL) + SG 5% 210 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":2,"doseMax":10,"concentracao":2000,"unidadeConc":"mcg/mL"},
+{"cat":"Vasoativos e Sedação","nome":"Dopamina 5mg/mL ampola 10 mL","prescricao":"Dopamina 5mg/mL ampola 10 mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":2,"doseMax":20,"concentracao":454.545455,"unidadeConc":"mcg/mL"},
+{"cat":"Outros","nome":"Enoxaparina sódica 40mg","prescricao":"Enoxaparina sódica 40mg, administrar por via subcutânea.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Esmolol 250mg/mL ampola 10 mL","prescricao":"Esmolol 250mg/mL ampola 10 mL + SF 0,9% 250 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":50,"doseMax":300,"concentracao":9615.384615,"unidadeConc":"mcg/mL"},
+{"cat":"Outros","nome":"Etomidato 2mg/mL","prescricao":"Etomidato 2mg/mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Fentanil 0,05mg/mL 3 ampolas (30 mL)","prescricao":"Fentanil 0,05mg/mL 3 ampolas (30 mL) + SG 5% 100 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/h","doseMin":1,"doseMax":5,"concentracao":11.538462,"unidadeConc":"mcg/mL"},
+{"cat":"Antibióticos","nome":"Fluconazol 2mg/mL","prescricao":"Fluconazol 2mg/mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Furosemida 10mg/mL","prescricao":"Furosemida 10mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Gentamicina 40mg/mL","prescricao":"Gentamicina 40mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Glicose 50%","prescricao":"Glicose 50% 40 mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Outros","nome":"Haloperidol 5mg/mL","prescricao":"Haloperidol 5mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Heparina sódica 5000UI/mL","prescricao":"Heparina sódica 5000UI/mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":false},
+{"cat":"Outros","nome":"Hidralazina 20mg/mL","prescricao":"Hidralazina 20mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Hidrocortisona 100mg","prescricao":"Hidrocortisona 100mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Imipenem + cilastatina 500mg","prescricao":"Imipenem + cilastatina 500mg + SF 0,9% 100 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Outros","nome":"Insulina regular 100UI/mL","prescricao":"Insulina regular 100UI/mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":false},
+{"cat":"Outros","nome":"Lactato de milrinona","prescricao":"Milrinona 1mg/mL ampola 10 mL 4 ampolas (40 mL) + SG 5% 210 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":0.375,"doseMax":0.75,"concentracao":160,"unidadeConc":"mcg/mL"},
+{"cat":"Antibióticos","nome":"Levofloxacino 5mg/mL","prescricao":"Levofloxacino 5mg/mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Linezolida 2mg/mL","prescricao":"Linezolida 2mg/mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Outros","nome":"Lorazepam 2mg/mL","prescricao":"Lorazepam 2mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Magnesio sulfato 50%","prescricao":"Magnésio sulfato 50% 10 mL + SF 0,9% 90 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Meropenem 1 g","prescricao":"Meropenem 1 g + SF 0,9% 100 mL, administrar por via intravenosa em bomba de infusão durante 4 horas.","calcPeso":false},
+{"cat":"Outros","nome":"Metilprednisolona 125mg","prescricao":"Metilprednisolona 125mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Metronidazol 5mg/mL","prescricao":"Metronidazol 5mg/mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Midazolam 5mg/mL","prescricao":"Midazolam 5mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":false},
+{"cat":"Outros","nome":"Morfina 10mg/mL","prescricao":"Morfina 10mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":false},
+{"cat":"Outros","nome":"Naloxona 0,4mg/mL","prescricao":"Naloxona 0,4mg/mL, administrar por via intravenosa.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Nitroglicerina 5mg/mL ampola 10 mL","prescricao":"Nitroglicerina 5mg/mL ampola 10 mL + SG 5% 240 mL, administrar por via intravenosa em BIC.","calcPeso":false,"alerta":"FOTOSSENSÍVEL - proteger da luz"},
+{"cat":"Vasoativos e Sedação","nome":"Nitroprussiato de sódio 25mg/mL ampola 2 mL","prescricao":"Nitroprussiato de sódio 25mg/mL ampola 2 mL + SG 5% 250 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":0.5,"doseMax":10,"concentracao":198.412698,"unidadeConc":"mcg/mL","alerta":"FOTOSSENSÍVEL - proteger da luz"},
+{"cat":"Vasoativos e Sedação","nome":"Norepinefrina 1mg/mL ampola 4 mL 4 ampolas (16 mL)","prescricao":"Norepinefrina 1mg/mL ampola 4 mL 4 ampolas (16 mL) + SG 5% 234 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":0.03,"doseMax":3.0,"doseMaxStd":0.6,"concentracao":64,"unidadeConc":"mcg/mL","alerta":"FOTOSSENSÍVEL - proteger da luz"},
+{"cat":"Outros","nome":"Omeprazol 40mg","prescricao":"Omeprazol 40mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Ondansetrona 2mg/mL","prescricao":"Ondansetrona 2mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Pantoprazol 40mg","prescricao":"Pantoprazol 40mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Piperacilina + tazobactam 4,5 g","prescricao":"Piperacilina + tazobactam 4,5 g + SF 0,9% 100 mL, administrar por via intravenosa em bomba de infusão durante 4 horas.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Polimixina B 500.000UI","prescricao":"Polimixina B 500.000UI + SG 5% 500 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Propofol 10mg/mL ampola ou FA 20 mL 5 ampolas (100 mL)","prescricao":"Propofol 10mg/mL ampola ou FA 20 mL 5 ampolas (100 mL), administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":25,"doseMax":75,"concentracao":10000,"unidadeConc":"mcg/mL"},
+{"cat":"Outros","nome":"Protamina 10mg/mL","prescricao":"Protamina 10mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Vasoativos e Sedação","nome":"Remifentanila 2 mg FA","prescricao":"Remifentanila 2 mg FA + AD 10 mL, administrar por via intravenosa.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":0.1,"doseMax":1,"concentracao":200,"unidadeConc":"mcg/mL"},
+{"cat":"Vasoativos e Sedação","nome":"Rocurônio 10mg/mL FA 5 mL 5 ampolas (25 mL)","prescricao":"Rocurônio 10mg/mL FA 5 mL 5 ampolas (25 mL) + SG 5% 250 mL, administrar por via intravenosa em BIC.","calcPeso":true,"unidade":"mcg/kg/min","doseMin":10,"doseMax":12,"concentracao":909.090909,"unidadeConc":"mcg/mL"},
+{"cat":"Outros","nome":"Suxametônio 100mg","prescricao":"Suxametônio 100mg + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Terbutalina 0,5mg/mL","prescricao":"Terbutalina 0,5mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":false},
+{"cat":"Outros","nome":"Tiamina 100mg/mL","prescricao":"Tiamina 100mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Outros","nome":"Tramadol 50mg/mL","prescricao":"Tramadol 50mg/mL + SF 0,9% 100 mL, administrar por via intravenosa em infusão lenta.","calcPeso":false},
+{"cat":"Antibióticos","nome":"Vancomicina 500mg","prescricao":"Vancomicina 500mg + SF 0,9% 100 mL, administrar por via intravenosa em bomba de infusão durante 2 horas.","calcPeso":false},
+{"cat":"Outros","nome":"Vasopressina 20UI/mL","prescricao":"Vasopressina 20UI/mL + SF 0,9% 100 mL, administrar por via intravenosa em BIC.","calcPeso":false}
+];
+
+const renalAdjustments = {
+  "Aciclovir 250 mg": (crcl) => {
+    if(crcl >= 50) return "CrCl ≥50: 5-10 mg/kg IV 8/8h";
+    if(crcl >= 25) return "CrCl 25-49: 5-10 mg/kg IV 12/12h";
+    if(crcl >= 10) return "CrCl 10-24: 5-10 mg/kg IV 24/24h";
+    return "CrCl <10: 2,5-5 mg/kg IV 24h";
+  },
+  "Amicacina 250mg/mL 2mL": (crcl) => {
+    if(crcl >= 60) return "CrCl ≥60: 15-20 mg/kg IV 24/24h (dose única diária)";
+    if(crcl >= 40) return "CrCl 40-59: 15 mg/kg IV 36/36h";
+    if(crcl >= 20) return "CrCl 20-39: 7,5 mg/kg IV 24-48h (monitorizar nível)";
+    return "CrCl <20: evitar ou dose após nível sérico";
+  },
+  "Gentamicina 40mg/mL": (crcl) => {
+    if(crcl >= 60) return "CrCl ≥60: 5-7 mg/kg IV 24/24h";
+    if(crcl >= 40) return "CrCl 40-59: 5 mg/kg IV 36h";
+    if(crcl >= 20) return "CrCl 20-39: 3-4 mg/kg IV 48h";
+    return "CrCl <20: dose única, depois por nível";
+  },
+  "Vancomicina 500mg": (crcl) => {
+    if(crcl >= 50) return "CrCl ≥50: 15-20 mg/kg IV 8-12/12h";
+    if(crcl >= 30) return "CrCl 30-49: 15-20 mg/kg IV 12-24/24h";
+    if(crcl >= 15) return "CrCl 15-29: 15 mg/kg IV 24-48h";
+    return "CrCl <15: 15 mg/kg dose de ataque, depois por nível";
+  },
+  "Piperacilina + tazobactam 4,5 g": (crcl) => {
+    if(crcl > 40) return "CrCl >40: 4,5g IV 6/6h (infusão 4h)";
+    if(crcl >= 20) return "CrCl 20-40: 3,375-4,5g IV 6/6h ou 4,5g 8/8h";
+    return "CrCl <20: 3,375g IV 8/8h ou 4,5g 12/12h";
+  },
+  "Meropenem 1 g": (crcl) => {
+    if(crcl > 50) return "CrCl >50: 1g IV 8/8h";
+    if(crcl >= 26) return "CrCl 26-50: 1g IV 12/12h";
+    if(crcl >= 10) return "CrCl 10-25: 500mg IV 12/12h";
+    return "CrCl <10: 500mg IV 24h";
+  },
+  "Ceftazidima 2 g": (crcl) => {
+    if(crcl > 50) return "CrCl >50: 2g IV 8/8h";
+    if(crcl >= 31) return "CrCl 31-50: 2g IV 12/12h";
+    if(crcl >= 16) return "CrCl 16-30: 1g IV 12/12h";
+    if(crcl >= 6) return "CrCl 6-15: 1g IV 24h";
+    return "CrCl <6: 500mg IV 24-48h";
+  },
+  "Cefepime 1 g": (crcl) => {
+    if(crcl > 60) return "CrCl >60: 2g IV 8-12/12h";
+    if(crcl >= 30) return "CrCl 30-60: 2g IV 24h ou 1g 12/12h";
+    if(crcl >= 11) return "CrCl 11-29: 1g IV 24h";
+    return "CrCl ≤10: 500mg IV 24h";
+  },
+  "Levofloxacino 5mg/mL": (crcl) => {
+    if(crcl >= 50) return "CrCl ≥50: 750mg IV 24h";
+    if(crcl >= 20) return "CrCl 20-49: 750mg dose inicial, depois 750mg 48h";
+    return "CrCl <20: 750mg dose inicial, depois 500mg 48h";
+  },
+  "Ciprofloxacino 2mg/mL": (crcl) => {
+    if(crcl > 30) return "CrCl >30: 400mg IV 8-12/12h";
+    return "CrCl ≤30: 400mg IV 24h";
+  },
+  "Cefazolina sódica 1 g": (crcl) => {
+    if(crcl > 55) return "CrCl >55: 1-2g IV 8/8h";
+    if(crcl >= 35) return "CrCl 35-54: 1g IV 12/12h";
+    if(crcl >= 11) return "CrCl 11-34: 500mg-1g IV 12-24h";
+    return "CrCl ≤10: 500mg IV 24h";
+  },
+  "Ceftriaxona 1 g": () => "Não requer ajuste renal (eliminação biliar >60%)",
+  "Imipenem + cilastatina 500mg": (crcl) => {
+    if(crcl >= 70) return "CrCl ≥70: 500mg-1g IV 6/6h";
+    if(crcl >= 41) return "CrCl 41-69: 500mg IV 6-8/8h";
+    if(crcl >= 21) return "CrCl 21-40: 250-500mg IV 8/8h";
+    if(crcl >= 6) return "CrCl 6-20: 250mg IV 12/12h";
+    return "CrCl <6: 125-250mg IV 12/24h";
+  },
+  "Anfotericina B lipossomal 50mg/10mL": (crcl) => {
+    if(crcl < 30) return "CrCl <30: alto risco nefrotoxicidade - preferir formulação lipossomal, hidratação vigorosa";
+    return "Monitorar CrCl diariamente, ajustar dose por toxicidade";
+  },
+  "Fluconazol 2mg/mL": (crcl) => {
+    if(crcl > 50) return "CrCl >50: dose plena";
+    if(crcl >= 11) return "CrCl 11-50: reduzir para 50% da dose";
+    return "CrCl ≤10: reduzir para 25% da dose";
+  }
+};
+
+const el = id => document.getElementById(id);
+const pesoInput = el('peso');
+const idadeInput = el('idade');
+const sexoSelect = el('sexo');
+const creaInput = el('creatinina');
+const crclBox = el('crclBox');
+const crclValue = el('crclValue');
+const crclClass = el('crclClass');
+const catSelect = el('categoria');
+const buscaInput = el('busca');
+const lista = el('lista');
+const contador = el('contador');
+const medNome = el('medNome');
+const medCat = el('medCat');
+const prescBox = el('prescBox');
+const emptyState = el('emptyState');
+const calcBox = el('calcBox');
+const badgeCalc = el('badgeCalc');
+const rateMin = el('rateMin');
+const rateMax = el('rateMax');
+const doseMinLabel = el('doseMinLabel');
+const doseMaxLabel = el('doseMaxLabel');
+const infoChips = el('infoChips');
+const textoFinal = el('textoFinal');
+const btnCopiar = el('btnCopiar');
+const btnLimpar = el('btnLimpar');
+const renalBox = el('renalBox');
+const renalText = el('renalText');
+const concInfo = el('concInfo');
+const alertaMed = el('alertaMed');
+const alertaTexto = el('alertaTexto');
+const highFlowWarn = el('highFlowWarn');
+const criticoCheck = el('critico');
+
+let selecionado = null;
+
+function fmtBR(n){ return Number(n).toFixed(1).replace('.',','); }
+function fmtDose(n){ return String(n).replace('.',','); }
+function normalize(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+const categorias = [...new Set(medicamentos.map(m=>m.cat))].sort();
+catSelect.innerHTML = `<option value="todas">Todas as categorias</option>` + categorias.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+function getCrClClass(c){
+ if(c>90) return 'Normal';
+ if(c>=60) return 'Leve';
+ if(c>=30) return 'Moderada';
+ if(c>=15) return 'Grave';
+ return 'Falência';
+}
+
+function calcular(med, peso, doseMin, doseMax){
+  const fator = med.unidade.includes('min') ? 60 : 1;
+  const min = doseMin * peso * fator / med.concentracao;
+  const max = doseMax * peso * fator / med.concentracao;
+  return {min, max, minFmt: fmtBR(min), maxFmt: fmtBR(max)};
+}
+
+function calcCrCl(){
+  const peso = parseFloat(pesoInput.value);
+  const idade = parseFloat(idadeInput.value);
+  const sexo = sexoSelect.value;
+  const cr = parseFloat(creaInput.value);
+  if(!peso || !idade || !cr || idade < 18 || cr <= 0){
+    crclBox.style.display='none';
+    return null;
+  }
+  let crcl = ((140 - idade) * peso) / (72 * cr);
+  if(sexo === 'F') crcl *= 0.85;
+  crclBox.style.display='flex';
+  crclValue.textContent = crcl.toFixed(1).replace('.',',');
+  crclClass.textContent = `– ${getCrClClass(crcl)}`;
+  savePatientData();
+  return crcl;
+}
+
+function loadPatientData(){
+  pesoInput.value = localStorage.getItem('peso') || '70';
+  idadeInput.value = localStorage.getItem('idade') || '65';
+  sexoSelect.value = localStorage.getItem('sexo') || 'M';
+  creaInput.value = localStorage.getItem('creatinina') || '1.0';
+  criticoCheck.checked = localStorage.getItem('critico') === '1';
+}
+function savePatientData(){
+  localStorage.setItem('peso', pesoInput.value);
+  localStorage.setItem('idade', idadeInput.value);
+  localStorage.setItem('sexo', sexoSelect.value);
+  localStorage.setItem('creatinina', creaInput.value);
+  localStorage.setItem('critico', criticoCheck.checked ? '1':'0');
+}
+
+function renderLista(){
+  const term = normalize(buscaInput.value.trim());
+  const cat = catSelect.value;
+  const filtrados = medicamentos.filter(m=>{
+    const okCat = cat==='todas' || m.cat===cat;
+    const okTerm = !term || normalize(m.nome).includes(term);
+    return okCat && okTerm;
+  });
+  contador.textContent = `${filtrados.length} itens`;
+  lista.innerHTML = filtrados.map((m,idx)=>{
+    const isAtb = m.cat==='Antibióticos';
+    const isVaso = m.cat==='Vasoativos e Sedação';
+    const badge = m.calcPeso ? `<span class="badge calc">cálculo</span>` : '';
+    const renal = renalAdjustments[m.nome] ? `<span class="badge renal">renal</span>` : '';
+    const foto = m.alerta ? `<span class="badge foto">foto</span>` : '';
+    const catClass = isAtb?'atb':isVaso?'vaso':'';
+    return `<button class="item ${selecionado===m?'active':''}" data-i="${medicamentos.indexOf(m)}">
+      <div class="item-name">${m.nome}</div>
+      <div class="item-meta">
+        <span class="badge ${catClass}">${m.cat}</span>
+        ${badge}
+        ${renal}
+        ${foto}
+      </div>
+    </button>`;
+  }).join('') || `<div class="empty" style="margin-top:8px">Nenhum medicamento encontrado</div>`;
+  
+  lista.querySelectorAll('.item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const m = medicamentos[+btn.dataset.i];
+      selecionar(m);
+    });
+  });
+}
+
+function updateRenalBox(){
+  if(!selecionado){
+    renalBox.style.display='none';
+    return;
+  }
+  const fn = renalAdjustments[selecionado.nome];
+  const crcl = calcCrCl();
+  if(!fn || !crcl){
+    renalBox.style.display='none';
+    return;
+  }
+  const rec = fn(crcl, parseFloat(pesoInput.value)||70);
+  const nefrotox = ["Vancomicina 500mg","Amicacina 250mg/mL 2mL","Gentamicina 40mg/mL","Anfotericina B","Anfotericina B lipossomal 50mg/10mL"];
+  let extra = '';
+  if(crcl <30 && nefrotox.includes(selecionado.nome)){
+    extra = `<div style="margin-top:8px;color:#b91c1c;font-weight:700">⚠ Nefrotóxico – CrCl <30 mL/min: alto risco de lesão renal aguda. Monitorar nível sérico.</div>`;
+  }
+  renalText.innerHTML = `<strong>CrCl ${crcl.toFixed(1).replace('.',',')} mL/min (${getCrClClass(crcl)}):</strong> ${rec}${extra}`;
+  renalBox.style.display='block';
+}
+
+function selecionar(m){
+  selecionado = m;
+  document.querySelectorAll('.item').forEach(b=>b.classList.toggle('active', +b.dataset.i===medicamentos.indexOf(m)));
+  
+  medNome.textContent = m.nome;
+  medCat.textContent = m.cat;
+  prescBox.style.display = 'block';
+  emptyState.style.display = 'none';
+  prescBox.textContent = m.prescricao;
+  badgeCalc.style.display = m.calcPeso ? 'inline-block' : 'none';
+
+  if(m.alerta){
+    alertaTexto.textContent = m.alerta;
+    alertaMed.style.display = 'flex';
+  } else {
+    alertaMed.style.display = 'none';
+  }
+
+  if(m.calcPeso){
+    calcBox.style.display = 'block';
+    concInfo.style.display = 'block';
+    concInfo.textContent = `Concentração da solução: ${fmtDose(m.concentracao)} ${m.unidadeConc} • Fórmula auditada: rate = dose × peso × ${m.unidade.includes('min')?'60':'1'} / concentração`;
+    atualizarCalculo();
+    const doseMaxEff = (m.nome.includes('Norepinefrina') && !criticoCheck.checked) ? m.doseMaxStd : m.doseMax;
+    infoChips.innerHTML = `
+      <span class="chip">Dose usual: ${fmtDose(m.doseMin)} – ${fmtDose(doseMaxEff)} ${m.unidade}</span>
+      <span class="chip">Volume final: ${m.nome.includes('Norepinefrina')?'250 mL':m.nome.includes('250')?'250 mL':'ver prescrição'}</span>
+    `;
+  }else{
+    calcBox.style.display = 'none';
+    concInfo.style.display = 'none';
+    infoChips.innerHTML = '';
+    textoFinal.value = m.prescricao;
+  }
+  updateRenalBox();
+}
+
+function atualizarCalculo(){
+  if(!selecionado || !selecionado.calcPeso) return;
+  const peso = parseFloat(pesoInput.value) || 70;
+  let doseMin = selecionado.doseMin;
+  let doseMax = selecionado.doseMax;
+  
+  if(selecionado.nome.includes('Norepinefrina')){
+    doseMax = criticoCheck.checked ? 3.0 : selecionado.doseMaxStd;
+  }
+  
+  const calc = calcular(selecionado, peso, doseMin, doseMax);
+  rateMin.textContent = calc.minFmt;
+  rateMax.textContent = calc.maxFmt;
+  doseMinLabel.textContent = `${fmtDose(doseMin)} ${selecionado.unidade}`;
+  doseMaxLabel.textContent = `${fmtDose(doseMax)} ${selecionado.unidade}`;
+  textoFinal.value = `${selecionado.prescricao} (Min: ${calc.minFmt} mL/h // Max: ${calc.maxFmt} mL/h)`;
+  
+  highFlowWarn.style.display = (calc.max > 100 || calc.min > 100) ? 'block' : 'none';
+}
+
+function handlePatientChange(){
+  calcCrCl();
+  if(selecionado?.calcPeso) atualizarCalculo();
+  updateRenalBox();
+  savePatientData();
+}
+
+[pesoInput, idadeInput, sexoSelect, creaInput].forEach(inp=>{
+  inp.addEventListener('input', handlePatientChange);
+  inp.addEventListener('change', handlePatientChange);
+});
+criticoCheck.addEventListener('change', ()=>{
+  savePatientData();
+  if(selecionado?.nome.includes('Norepinefrina')) selecionar(selecionado);
+});
+
+buscaInput.addEventListener('input', renderLista);
+catSelect.addEventListener('change', renderLista);
+
+btnCopiar.addEventListener('click', async ()=>{
+  if(!textoFinal.value) return;
+  try{
+    await navigator.clipboard.writeText(textoFinal.value);
+    const original = btnCopiar.innerHTML;
+    btnCopiar.classList.add('copied');
+    btnCopiar.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Copiado!`;
+    setTimeout(()=>{ btnCopiar.classList.remove('copied'); btnCopiar.innerHTML = original; }, 1800);
+  }catch(e){
+    textoFinal.select();
+    document.execCommand('copy');
+  }
+});
+
+btnLimpar.addEventListener('click', ()=>{
+  selecionado = null;
+  medNome.textContent = 'Selecione um medicamento';
+  medCat.textContent = 'Escolha na lista ao lado';
+  prescBox.style.display='none';
+  calcBox.style.display='none';
+  emptyState.style.display='block';
+  badgeCalc.style.display='none';
+  renalBox.style.display='none';
+  alertaMed.style.display='none';
+  concInfo.style.display='none';
+  textoFinal.value='';
+  document.querySelectorAll('.item.active').forEach(b=>b.classList.remove('active'));
+});
+
+loadPatientData();
+calcCrCl();
+renderLista();
+</script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>

@@ -5,6 +5,7 @@ from crewai.agents.agent_builder.base_agent import BaseAgent
 from crewai.mcp import MCPServerHTTP
 from crewai.project import CrewBase, agent, crew, task
 
+from clinical_copilot.tools.base_conhecimento import buscar_base_conhecimento_clinico
 from clinical_copilot.tools.medplum_token import obter_medplum_token
 
 GROQ_MODEL = os.getenv("GROQ_MODEL", "groq/llama-3.3-70b-versatile")
@@ -29,7 +30,7 @@ def _medplum_mcp_server() -> MCPServerHTTP:
 
 @CrewBase
 class CopilotCrew:
-    """Crew do Copilot Clínico: pesquisa FHIR + resumo para o profissional."""
+    """Crew do Copilot Clínico: pesquisa FHIR + base de conhecimento + resumo."""
 
     agents: list[BaseAgent]
     tasks: list[Task]
@@ -46,6 +47,14 @@ class CopilotCrew:
         )
 
     @agent
+    def protocol_research_agent(self) -> Agent:
+        return Agent(
+            config=self.agents_config["protocol_research_agent"],  # type: ignore[index]
+            llm=GROQ_MODEL,
+            tools=[buscar_base_conhecimento_clinico],
+        )
+
+    @agent
     def clinical_summary_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["clinical_summary_agent"],  # type: ignore[index]
@@ -53,9 +62,15 @@ class CopilotCrew:
         )
 
     @task
-    def research_task(self) -> Task:
+    def fhir_research_task(self) -> Task:
         return Task(
-            config=self.tasks_config["research_task"],  # type: ignore[index]
+            config=self.tasks_config["fhir_research_task"],  # type: ignore[index]
+        )
+
+    @task
+    def protocol_research_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["protocol_research_task"],  # type: ignore[index]
         )
 
     @task
@@ -66,7 +81,7 @@ class CopilotCrew:
 
     @crew
     def crew(self) -> Crew:
-        """Cria o Copilot Crew (processo sequencial: pesquisa -> resumo)."""
+        """Cria o Copilot Crew (processo sequencial: pesquisas -> resumo)."""
         return Crew(
             agents=self.agents,
             tasks=self.tasks,

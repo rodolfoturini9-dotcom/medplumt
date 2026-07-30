@@ -1,52 +1,106 @@
 #!/usr/bin/env python
+from crewai import Agent
+from crewai.flow import Flow, listen, or_, router, start
 from pydantic import BaseModel
 
-from crewai.flow import Flow, listen, start
-
-from clinical_copilot.crews.copilot_crew.copilot_crew import CopilotCrew
+from clinical_copilot.crews.copilot_crew.copilot_crew import GROQ_MODEL, CopilotCrew
+from clinical_copilot.tools.tarefas_pessoais import gerenciar_tarefas_pessoais
 
 
 class CopilotState(BaseModel):
     pergunta: str = ""
     patient_id: str = ""
-    resumo: str = ""
+    categoria: str = ""
+    resposta: str = ""
 
 
-class ClinicalCopilotFlow(Flow[CopilotState]):
+class PersonalCopilotFlow(Flow[CopilotState]):
+    """Copilot único: roteia entre a crew clínica (Medplum + base de
+    conhecimento) e um assistente pessoal para tarefas do dia a dia."""
 
     @start()
-    def receber_pergunta(self, crewai_trigger_payload: dict = None):
+    def receber_pedido(self, crewai_trigger_payload: dict = None):
         if crewai_trigger_payload:
             self.state.pergunta = crewai_trigger_payload.get("pergunta", "")
             self.state.patient_id = crewai_trigger_payload.get("patient_id", "")
 
         if not self.state.pergunta:
-            self.state.pergunta = input("Pergunta clínica: ")
+            self.state.pergunta = input("O que você precisa? ")
         if not self.state.patient_id:
             self.state.patient_id = input(
-                "ID do paciente (Patient.id, opcional — Enter para pular): "
+                "ID do paciente (Patient.id — só se for uma pergunta clínica sobre um "
+                "paciente específico; Enter para pular): "
             )
 
-        print(f"\nPergunta: {self.state.pergunta}")
+    @router(receber_pedido)
+    def rotear(self) -> str:
+        """Classifica o pedido como clínico (dados de paciente/protocolo/
+        prescrição) ou pessoal (organização, redação, tarefas, cálculos)."""
         if self.state.patient_id:
-            print(f"Paciente: {self.state.patient_id}")
+            self.state.categoria = "clinico"
+            return "clinico"
 
-    @listen(receber_pergunta)
-    def pesquisar_e_resumir(self):
-        result = CopilotCrew().crew().kickoff(
+        roteador = Agent(
+            role="Roteador de Pedidos",
+            goal="Classificar um pedido como 'clinico' ou 'pessoal', sem respondê-lo.",
+            backstory=(
+                "'clinico' = pergunta sobre um paciente, protocolo clínico, "
+                "farmacologia ou prescrição. 'pessoal' = qualquer outra tarefa do "
+                "dia a dia, profissional ou pessoal (organização, redação, "
+                "lembretes, cálculos, resumos etc.)."
+            ),
+            llm=GROQ_MODEL,
+        )
+        resultado = roteador.kickoff(
+            f'Pedido: "{self.state.pergunta}"\n\n'
+            "Responda com exatamente uma palavra: clinico ou pessoal."
+        )
+        texto = resultado.raw.strip().lower()
+        self.state.categoria = "clinico" if "clinico" in texto or "clínico" in texto else "pessoal"
+        return self.state.categoria
+
+    @listen("clinico")
+    def responder_clinico(self):
+        resultado = CopilotCrew().crew().kickoff(
             inputs={"pergunta": self.state.pergunta, "patient_id": self.state.patient_id}
         )
-        self.state.resumo = result.raw
-        # A própria task de resumo já grava output/resumo.md (output_file no tasks.yaml).
-        print("\n" + self.state.resumo)
+        self.state.resposta = resultado.raw
+
+    @listen("pessoal")
+    def responder_pessoal(self):
+        assistente = Agent(
+            role="Assistente Pessoal",
+            goal=(
+                "Ajudar com tarefas do dia a dia, profissionais e pessoais: "
+                "organizar tarefas e lembretes, redigir e revisar textos, fazer "
+                "cálculos, resumir e organizar informação."
+            ),
+            backstory=(
+                "Você é direto e prático. Use a tool `gerenciar_tarefas_pessoais` "
+                "para criar, listar, concluir ou remover tarefas/lembretes quando "
+                "for o caso. Quando o pedido depender de um serviço externo que "
+                "ainda não está conectado a este agente (e-mail, agenda, "
+                "WhatsApp etc.), diga isso claramente e explique que é preciso "
+                "conectar esse serviço (ver README) em vez de fingir que a ação "
+                "foi executada."
+            ),
+            llm=GROQ_MODEL,
+            tools=[gerenciar_tarefas_pessoais],
+        )
+        resultado = assistente.kickoff(self.state.pergunta)
+        self.state.resposta = resultado.raw
+
+    @listen(or_(responder_clinico, responder_pessoal))
+    def mostrar_resposta(self):
+        print(f"\n[{self.state.categoria}]\n{self.state.resposta}")
 
 
 def kickoff():
-    ClinicalCopilotFlow().kickoff()
+    PersonalCopilotFlow().kickoff()
 
 
 def plot():
-    ClinicalCopilotFlow().plot()
+    PersonalCopilotFlow().plot()
 
 
 def run_with_trigger():
@@ -62,7 +116,7 @@ def run_with_trigger():
     except json.JSONDecodeError:
         raise Exception("Payload JSON inválido.")
 
-    flow = ClinicalCopilotFlow()
+    flow = PersonalCopilotFlow()
 
     try:
         return flow.kickoff({"crewai_trigger_payload": trigger_payload})

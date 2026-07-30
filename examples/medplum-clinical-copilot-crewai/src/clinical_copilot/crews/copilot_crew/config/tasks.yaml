@@ -1,0 +1,36 @@
+research_task:
+  description: >
+    Pergunta do profissional: "{pergunta}"
+    Patient/{patient_id} (pode estar vazio, veja abaixo).
+
+    Use a tool `fhir-request` (sempre com method="GET") para buscar no
+    Medplum os recursos FHIR que respondem à pergunta. Se {patient_id} não
+    estiver vazio, filtre as buscas por esse paciente
+    (ex.: `/fhir/R4/Observation?subject=Patient/{patient_id}`).
+
+    Nunca use POST, PUT, PATCH ou DELETE — se a tool aceitar, ainda assim
+    não é o seu papel usá-los.
+  expected_output: >
+    Lista dos recursos FHIR relevantes encontrados, cada um com
+    resourceType, id, data (quando aplicável) e os valores que respondem à
+    pergunta. Se nada relevante for encontrado, diga isso explicitamente.
+  agent: fhir_research_agent
+
+summary_task:
+  description: >
+    Com base nos achados da pesquisa, escreva uma resposta objetiva para a
+    pergunta "{pergunta}".
+
+    Requisitos:
+    - Cite a fonte (resourceType/id e data) de cada informação usada.
+    - Se a informação disponível for insuficiente ou ambígua, diga isso
+      claramente em vez de especular.
+    - Nunca apresente uma conclusão diagnóstica como fato — a decisão é do
+      profissional que revisar este resumo.
+    - Termine sempre com o aviso: "Rascunho gerado por IA — requer revisão
+      de um profissional de saúde antes de qualquer uso clínico."
+  expected_output: >
+    Resumo em markdown respondendo à pergunta, com as fontes citadas e o
+    aviso de revisão obrigatória ao final.
+  agent: clinical_summary_agent
+  output_file: output/resumo.md

@@ -126,6 +126,8 @@ You can also connect a [CrewAI](https://docs.crewai.com/) agent directly to the 
 
 _Note: `MCPServerAdapter` opens the MCP session for the lifetime of the `with` block, so keep agent/crew execution that depends on `mcp_tools` inside it._
 
+Recent CrewAI versions also support attaching an MCP server directly on an `Agent` via the `mcps` field (`Agent(mcps=[MCPServerHTTP(url=..., headers=...)])`), without a `with` block — see [`docs.crewai.com/mcp`](https://docs.crewai.com/mcp) for the current recommended API. A full runnable example (multi-agent Flow, Groq as the LLM, read-only Medplum access enforced via an `AccessPolicy`) lives in [`examples/medplum-clinical-copilot-crewai`](https://github.com/medplum/medplum/tree/main/examples/medplum-clinical-copilot-crewai).
+
 ### Authentication and Security
 
 Medplum uses **OAuth 2.0 with the 6/18 auth spec** to securely authenticate users. When you first connect the integration, you will be redirected to the Medplum server to log in and authorize Claude.ai to access your data. Medplum's platform ensures all data access is secure and compliant with relevant healthcare regulations. Our full privacy policy can be found here: https://www.medplum.com/privacy

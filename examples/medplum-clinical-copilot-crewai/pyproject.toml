@@ -1,0 +1,31 @@
+[project]
+name = "clinical_copilot"
+version = "0.1.0"
+description = "Copilot clínico e assistente pessoal (CrewAI + Groq) com Medplum via MCP"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]>=1.15.9,<2.0.0",
+    "mcp>=1.0.0",
+    "requests>=2.31.0",
+    # Necessário para usar llm="groq/..." (Groq não é um provider nativo do
+    # crewai.LLM, só via LiteLLM).
+    "litellm>=1.60.0",
+    # API HTTP (src/clinical_copilot/api.py) — ponte para frontends estáticos
+    # como o Netlify/Sistema ISLS, que não rodam o Flow diretamente.
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.scripts]
+kickoff = "clinical_copilot.main:kickoff"
+run_crew = "clinical_copilot.main:kickoff"
+plot = "clinical_copilot.main:plot"
+run_with_trigger = "clinical_copilot.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "flow"

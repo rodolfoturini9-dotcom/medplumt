@@ -1,0 +1,14 @@
+# Manutenção de Sedação - Resumido
+
+*Fonte original: `Manutenc_a_o_de_Sedac_a_o_-_Resumido.txt`*
+
+---
+
+SUGESTÕES:
+
+USO ENDOVENOSO:
+1) FENTANIL 0,05 MG/ML ---- 02 AMPOLAS DE 10 ML
+DILUIR 02 AMPOLAS EM 80 ML DE SF 0,9% OU SG 5%, INICIAR 5 ML/H NO PACIENTE DE 70 KG
+
+2) MIDAZOLAM 5 MG/ML ---- 02 AMPOLAS DE 10 ML
+DILUIR 02 AMPOLAS EM 80 ML DE SF 0,9% OU SG 5%, INICIAR 2 A 7 ML/H NO PACIENTE DE 70 KG

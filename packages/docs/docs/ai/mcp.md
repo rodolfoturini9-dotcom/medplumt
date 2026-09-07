@@ -77,6 +77,57 @@ Here are three examples demonstrating the core capabilities of the Medplum MCP i
 - **Tool Call:** The AI will first use the search tool to find the ID for John Doe, and then the fetch tool to retrieve the specific Observation resources for his latest cholesterol lab work.
 - **Outcome:** The Medplum server returns the detailed observation data, including values and units, which the AI can present to the user in an easy-to-understand format.
 
+### Connecting from CrewAI
+
+You can also connect a [CrewAI](https://docs.crewai.com/) agent directly to the Medplum MCP server using CrewAI's built-in [MCP support](https://docs.crewai.com/mcp), which exposes remote MCP tools (like `fhir-request`) to your `Agent` via `MCPServerAdapter`.
+
+1. **Install the MCP extra for `crewai-tools`:**
+
+   ```shell
+   uv pip install 'crewai-tools[mcp]'
+   ```
+
+2. **Create a Medplum Client Application** (Admin > Client Applications) and use client-credentials to obtain an access token, or reuse a user access token. The Medplum MCP endpoint accepts a standard OAuth 2.0 bearer token in the `Authorization` header — see [Authentication and Security](#authentication-and-security) below.
+
+3. **Connect with `MCPServerAdapter`** using the Streamable HTTP transport:
+
+   ```python
+   from crewai import Agent, Crew, Task
+   from crewai_tools import MCPServerAdapter
+
+   server_params = {
+       "url": "https://api.medplum.com/mcp/stream",
+       "transport": "streamable-http",
+       "headers": {"Authorization": f"Bearer {medplum_access_token}"},
+   }
+
+   with MCPServerAdapter(server_params, connect_timeout=60) as mcp_tools:
+       print(f"Available tools: {[tool.name for tool in mcp_tools]}")
+
+       fhir_agent = Agent(
+           role="Medplum FHIR Assistant",
+           goal="Answer questions and safely perform requested actions on FHIR data in Medplum.",
+           backstory="I use the Medplum MCP server's fhir-request tool to read and write FHIR resources.",
+           tools=mcp_tools,
+           reasoning=True,
+           verbose=True,
+       )
+
+       task = Task(
+           description="Find all patients with a systolic blood pressure observation over 140 in the last year.",
+           expected_output="A list of matching patient names and IDs.",
+           agent=fhir_agent,
+       )
+
+       Crew(agents=[fhir_agent], tasks=[task]).kickoff()
+   ```
+
+   Against a locally running Medplum server (e.g. via `npm run dev` in `packages/server`), point `url` at `http://localhost:8103/mcp/stream` instead.
+
+_Note: `MCPServerAdapter` opens the MCP session for the lifetime of the `with` block, so keep agent/crew execution that depends on `mcp_tools` inside it._
+
+Recent CrewAI versions also support attaching an MCP server directly on an `Agent` via the `mcps` field (`Agent(mcps=[MCPServerHTTP(url=..., headers=...)])`), without a `with` block — see [`docs.crewai.com/mcp`](https://docs.crewai.com/mcp) for the current recommended API. A full runnable example (multi-agent Flow, Groq as the LLM, read-only Medplum access enforced via an `AccessPolicy`) lives in [`examples/medplum-clinical-copilot-crewai`](https://github.com/medplum/medplum/tree/main/examples/medplum-clinical-copilot-crewai).
+
 ### Authentication and Security
 
 Medplum uses **OAuth 2.0 with the 6/18 auth spec** to securely authenticate users. When you first connect the integration, you will be redirected to the Medplum server to log in and authorize Claude.ai to access your data. Medplum's platform ensures all data access is secure and compliant with relevant healthcare regulations. Our full privacy policy can be found here: https://www.medplum.com/privacy

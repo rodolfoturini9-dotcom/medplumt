@@ -1,0 +1,19 @@
+# Pielonefrite Complicada
+
+*Fonte original: `Pielonefrite_Complicada.txt`*
+
+---
+
+USO ENDOVENOSO:
+
+1) CEFTRIAXONA 1G F/A --------- 02 FRASCOS
+DILUIR O CONTEÚDO DE 02 FRASCOS EM 100 ML DE SORO FISIOLÓGICO 0,9%, INFUNDIR DURANTE 01 HORA.
+
+2) BROMOPRIDA 10 MG INJETÁVEL -------- 01 AMPOLA
+DILUIR O CONTEÚDO DE 01 AMPOLA, EM 8 ML DE SORO FISIOLÓGICO 0,9%, INFUNDIR EM BOLUS, DE 8/8H, CASO NÁUSEAS E/OU VÔMITOS
+
+3) DIPIRONA 1 G INJETÁVEL -------- 01 AMPOLA
+DILUIR O CONTEÚDO DE 01 AMPOLA, EM 8 ML DE SORO FISIOLÓGICO 0,9%, INFUNDIR EM BOLUS, DE 6/6H, CASO DOR E/OU FEBRE
+
+
+Avaliar resposta clínica em 48/72 horas, necessidade de exame complementar e escalonamento de terapia antimicrobiana.

@@ -20,17 +20,18 @@ class PersonalCopilotFlow(Flow[CopilotState]):
 
     @start()
     def receber_pedido(self, crewai_trigger_payload: dict = None):
-        if crewai_trigger_payload:
+        if crewai_trigger_payload is not None:
+            # Chamado via payload (API, webhook, run_with_trigger) — nunca
+            # bloqueia esperando input() de terminal.
             self.state.pergunta = crewai_trigger_payload.get("pergunta", "")
             self.state.patient_id = crewai_trigger_payload.get("patient_id", "")
+            return
 
-        if not self.state.pergunta:
-            self.state.pergunta = input("O que você precisa? ")
-        if not self.state.patient_id:
-            self.state.patient_id = input(
-                "ID do paciente (Patient.id — só se for uma pergunta clínica sobre um "
-                "paciente específico; Enter para pular): "
-            )
+        self.state.pergunta = input("O que você precisa? ")
+        self.state.patient_id = input(
+            "ID do paciente (Patient.id — só se for uma pergunta clínica sobre um "
+            "paciente específico; Enter para pular): "
+        )
 
     @router(receber_pedido)
     def rotear(self) -> str:
@@ -91,8 +92,9 @@ class PersonalCopilotFlow(Flow[CopilotState]):
         self.state.resposta = resultado.raw
 
     @listen(or_(responder_clinico, responder_pessoal))
-    def mostrar_resposta(self):
+    def mostrar_resposta(self) -> dict:
         print(f"\n[{self.state.categoria}]\n{self.state.resposta}")
+        return {"categoria": self.state.categoria, "resposta": self.state.resposta}
 
 
 def kickoff():

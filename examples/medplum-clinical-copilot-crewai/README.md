@@ -104,6 +104,84 @@ uv run run_with_trigger '{"pergunta": "Quais os últimos resultados de hemograma
 uv run run_with_trigger '{"pergunta": "Adicione uma tarefa: revisar prontuários pendentes até sexta"}'
 ```
 
+## Integração com Netlify / Sistema ISLS
+
+O Netlify hospeda ótimo site estático + Netlify Functions, mas **não é o
+lugar de rodar o Flow em Python diretamente** — os 3 agentes da frente
+clínica rodam em sequência e cada chamada de LLM pode levar alguns
+segundos, o que estoura fácil o timeout de uma função serverless (10s no
+plano free do Netlify, 26s no Pro). A arquitetura que funciona:
+
+```
+Site ISLS no Netlify (estático)
+        │  fetch('/.netlify/functions/copilot', {...})
+        ▼
+Netlify Function (netlify/functions/copilot.js)   ← só repassa a chamada,
+        │  fetch(COPILOT_API_URL, header X-API-Key)   guarda a API key
+        ▼
+API Python (src/clinical_copilot/api.py, FastAPI)  ← roda o Flow de verdade
+        hospedada em Render/Railway/Fly.io/um VPS
+```
+
+### 1. Hospede `api.py` em algo que segure processo Python
+
+O Netlify não serve para isso; qualquer host de app Python funciona — o
+exemplo abaixo usa [Render](https://render.com) (tem plano free):
+
+1. Crie um **Web Service** no Render apontando para este diretório do repo.
+2. Build command: `pip install uv && uv sync`
+3. Start command: `uv run uvicorn clinical_copilot.api:app --host 0.0.0.0 --port $PORT`
+   (o `Procfile` já documenta esse comando, útil também em Railway/Heroku-like).
+4. Configure as variáveis de ambiente do `.env.example` nesse serviço, mais:
+   - `COPILOT_API_KEY` — invente uma chave qualquer (ex.: `openssl rand -hex 24`).
+     Sem isso, `/pedido` fica público para quem souber a URL — quem pagar a
+     conta da Groq/Medplum é você.
+   - `COPILOT_ALLOWED_ORIGINS` — o domínio do seu site Netlify (ex.:
+     `https://seu-site.netlify.app`), para o CORS não aceitar qualquer origem.
+5. Depois do deploy, teste: `curl -X POST https://sua-api.onrender.com/pedido -H "X-API-Key: SUACHAVE" -H "Content-Type: application/json" -d '{"pergunta":"oi"}'`
+
+### 2. No repositório do seu site Netlify (o Sistema ISLS)
+
+Copie estes dois arquivos deste exemplo para o repositório do seu site:
+
+- `netlify/functions/copilot.js` → `netlify/functions/copilot.js` no seu repo
+- `netlify/widget/copilot-widget.js` → em qualquer pasta servida estaticamente
+  (ex.: `public/js/copilot-widget.js`)
+
+No `netlify.toml` do seu site (crie se não existir):
+
+```toml
+[build]
+  functions = "netlify/functions"
+```
+
+Nas variáveis de ambiente do **site** no Netlify (Site configuration >
+Environment variables), configure:
+
+- `COPILOT_API_URL` = `https://sua-api.onrender.com/pedido`
+- `COPILOT_API_KEY` = a mesma chave que você colocou no Render
+
+Em qualquer página HTML do ISLS onde quiser o botão de chat:
+
+```html
+<script src="/js/copilot-widget.js"></script>
+```
+
+Isso adiciona um botão flutuante (💬) que abre um painel simples: campo de
+pergunta, campo opcional de `Patient.id`, e a resposta do copilot — sem
+nenhuma dependência externa, no mesmo espírito vanilla-JS dos outros apps
+do Sistema ISLS.
+
+### Por que a Netlify Function no meio, e não o widget chamando a API direto
+
+Se o widget chamasse `COPILOT_API_URL` diretamente, a `COPILOT_API_KEY`
+precisaria estar no JS que roda no navegador — qualquer visitante consegue
+ler no DevTools. A Netlify Function fica entre os dois só para manter essa
+chave no servidor. Isso ainda não é "multiusuário seguro" (é uma chave
+compartilhada, pensada para o seu uso pessoal) — se um dia este copilot for
+exposto para outras pessoas além de você, aí sim precisa de autenticação de
+verdade (login), não só uma chave fixa.
+
 ## Estrutura
 
 ```
@@ -119,7 +197,12 @@ medplum-clinical-copilot-crewai/
 │   │   ├── medplum_token.py            # client-credentials -> access token do Medplum
 │   │   ├── base_conhecimento.py        # tool de busca full-text sobre knowledge/kb/
 │   │   └── tarefas_pessoais.py         # tool de tarefas/lembretes (persistência local em JSON)
-│   └── main.py                         # Flow: recebe o pedido -> roteia -> clínico ou pessoal
+│   ├── main.py                         # Flow: recebe o pedido -> roteia -> clínico ou pessoal
+│   └── api.py                          # API HTTP (FastAPI) que expõe o Flow — ver seção Netlify abaixo
+├── netlify/
+│   ├── functions/copilot.js            # Netlify Function: proxy que guarda a API key no servidor
+│   └── widget/copilot-widget.js        # widget de chat (vanilla JS) para colar no site estático
+├── Procfile                            # `web: uvicorn ...` — para hospedar api.py em Render/Railway/etc.
 ├── AGENTS.md                           # guia de referência CrewAI (gerado pelo CLI)
 ├── pyproject.toml
 └── .env.example

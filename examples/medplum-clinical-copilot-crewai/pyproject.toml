@@ -11,6 +11,10 @@ dependencies = [
     # Necessário para usar llm="groq/..." (Groq não é um provider nativo do
     # crewai.LLM, só via LiteLLM).
     "litellm>=1.60.0",
+    # API HTTP (src/clinical_copilot/api.py) — ponte para frontends estáticos
+    # como o Netlify/Sistema ISLS, que não rodam o Flow diretamente.
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
 ]
 
 [project.scripts]
